@@ -20,7 +20,7 @@ public class CameraManager: NSObject, CameraManagerProtocol {
     
     static let shared = CameraManager()
     // MARK: - Variables
-    private let session = AVCaptureSession()
+    public let session = AVCaptureSession()
     private let output = AVCapturePhotoOutput()
     private var currentInput: AVCaptureDeviceInput?
     
@@ -77,7 +77,7 @@ public class CameraManager: NSObject, CameraManagerProtocol {
 
     // MARK: - Start / Stop
     public func startSession() {
-        DispatchQueue.main.async {
+        DispatchQueue.global(qos: .userInitiated).async {
             if !self.session.isRunning {
                 self.session.startRunning()
             }
@@ -85,7 +85,7 @@ public class CameraManager: NSObject, CameraManagerProtocol {
     }
 
     public func stopSession() {
-        DispatchQueue.main.async {
+        DispatchQueue.global(qos: .userInitiated).async {
             if self.session.isRunning {
                 self.session.stopRunning()
             }
