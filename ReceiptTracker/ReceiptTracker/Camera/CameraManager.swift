@@ -1,5 +1,6 @@
 import Foundation
 import AVFoundation
+import Combine
 
 enum CameraManagerError: Error {
     case savingImageFailed
@@ -7,7 +8,7 @@ enum CameraManagerError: Error {
 }
 
 public protocol CameraManagerProtocol {
-    var isSessionRunning: Bool { get }
+    var isSessionRunningPublisher: AnyPublisher<Bool, Never> { get }
     
     func requestPermission() async -> Bool
     func configureSession()
@@ -24,9 +25,13 @@ public class CameraManager: NSObject, CameraManagerProtocol {
     private let output = AVCapturePhotoOutput()
     private var currentInput: AVCaptureDeviceInput?
     
-    public var isSessionRunning: Bool { return session.isRunning }
-    
     private var continuation: CheckedContinuation<String?, Error>?
+    
+    private var isSessionRunningSubject = CurrentValueSubject<Bool, Never>(false)
+        
+    public var isSessionRunningPublisher: AnyPublisher<Bool, Never> {
+        return isSessionRunningSubject.eraseToAnyPublisher()
+    }
     
     private override init() {
         super.init()
@@ -80,6 +85,10 @@ public class CameraManager: NSObject, CameraManagerProtocol {
         DispatchQueue.global(qos: .userInitiated).async {
             if !self.session.isRunning {
                 self.session.startRunning()
+                
+                DispatchQueue.main.async {
+                    self.isSessionRunningSubject.send(true)
+                }
             }
         }
     }
@@ -88,6 +97,10 @@ public class CameraManager: NSObject, CameraManagerProtocol {
         DispatchQueue.global(qos: .userInitiated).async {
             if self.session.isRunning {
                 self.session.stopRunning()
+                
+                DispatchQueue.main.async {
+                    self.isSessionRunningSubject.send(false)
+                }
             }
         }
     }

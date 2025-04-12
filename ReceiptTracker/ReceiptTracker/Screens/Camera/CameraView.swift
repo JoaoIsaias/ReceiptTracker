@@ -2,18 +2,20 @@ import SwiftUI
 import AVFoundation
 
 struct CameraPreview: UIViewRepresentable {
-    @Binding var isSessionRunning: Bool
-    let session: AVCaptureSession
+    @Binding var isSessionRunning: Bool //Adding a binding makes swiftui update the view correctly with the screen using it
+    let session: AVCaptureSession?
 
     func makeUIView(context: Context) -> UIView {
         let view = UIView()
-
-        let previewLayer = AVCaptureVideoPreviewLayer(session: session)
-        previewLayer.videoGravity = .resizeAspectFill
-        previewLayer.frame = view.bounds
-        view.layer.addSublayer(previewLayer)
         
-        context.coordinator.previewLayer = previewLayer
+        if let session = session, context.coordinator.previewLayer == nil {
+            let previewLayer = AVCaptureVideoPreviewLayer(session: session)
+            previewLayer.videoGravity = .resizeAspectFill
+            previewLayer.frame = view.bounds
+            view.layer.addSublayer(previewLayer)
+            
+            context.coordinator.previewLayer = previewLayer
+        }
         
         return view
     }
