@@ -2,10 +2,13 @@ import SwiftUI
 import CoreData
 
 struct DetailsScreenView: View {
+    @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.dismiss) private var dismiss
+    
     let photoPath: String
     @State private var isImageFullscreen = false
     
-    @State private var date = Date.now
+    @State private var date = Date()
     @State private var amount: Double = 0.0
     @State private var vendorText: String = ""
     @State private var notesText: String = ""
@@ -16,6 +19,8 @@ struct DetailsScreenView: View {
     @FocusState private var isAmountFocused: Bool
     @FocusState private var isVendorFocused: Bool
     @FocusState private var isNotesFocused: Bool
+    
+    @StateObject private var viewModel = DetailsScreenViewModel()
     
     var body: some View {
         ZStack {
@@ -105,7 +110,21 @@ struct DetailsScreenView: View {
                     Spacer()
                     
                     Button("Save") {
-                        print("Save Details")
+                        Task {
+                            do {
+                                try await viewModel.saveOnCoreData(
+                                    context: viewContext,
+                                    imagePath: photoPath,
+                                    date: date, amount: amount,
+                                    currency: selectedCurrency,
+                                    vendor: vendorText.isEmpty ? nil : vendorText,
+                                    notes: notesText.isEmpty ? nil : notesText)
+                                
+                                dismiss()
+                            } catch {
+                                print("Failed to save: \(error)")
+                            }
+                        }
                     }
                     .buttonStyle(.borderedProminent)
                     .buttonBorderShape(.roundedRectangle)
