@@ -9,56 +9,61 @@ struct CameraScreenView: View {
     @State private var showPermissionAlert = false
     
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                Color.black.edgesIgnoringSafeArea(.all)
-                
-                VStack {
-                    if viewModel.isCameraPermissionGranted == nil {
-                        EmptyView()
-                    } else if viewModel.isCameraPermissionGranted == false {
-                        Text("Camera permission is required.")
-                            .foregroundStyle(.white)
-                            .padding()
-                        
-                        Button("Go to Settings") {
-                            openSettings()
-                        }
-                        .padding()
-                    } else {
-                        CameraPreview(isSessionRunning: $viewModel.isCameraSessionRunning, session: viewModel.getCameraSession())
-                            .frame(height: UIScreen.main.bounds.height*0.6)
+        NavigationStack {
+            GeometryReader { geometry in
+                ZStack {
+                    Color.black.edgesIgnoringSafeArea(.all)
+                    
+                    VStack {
+                        if viewModel.isCameraPermissionGranted == nil {
+                            EmptyView()
+                        } else if viewModel.isCameraPermissionGranted == false {
+                            Text("Camera permission is required.")
+                                .foregroundStyle(.white)
+                                .padding()
                             
-                        
-                        HStack {
-                            CustomCaptureButton {
-                                Task {
-                                    capturedPhotoPath = await viewModel.capturePhoto()
-                                    viewModel.stopCameraSession()
-                                    
-                                    if capturedPhotoPath != nil {
-                                        shouldNavigate = true
+                            Button("Go to Settings") {
+                                openSettings()
+                            }
+                            .padding()
+                        } else {
+                            CameraPreview(isSessionRunning: $viewModel.isCameraSessionRunning, session: viewModel.getCameraSession())
+                                .frame(height: UIScreen.main.bounds.height*0.6)
+                            
+                            
+                            HStack {
+                                CustomCaptureButton {
+                                    Task {
+                                        capturedPhotoPath = await viewModel.capturePhoto()
+                                        viewModel.stopCameraSession()
+                                        
+                                        if capturedPhotoPath != nil {
+                                            shouldNavigate = true
+                                        }
                                     }
                                 }
                             }
+                            .padding()
+                            
+                            if let imagePath = capturedPhotoPath {
+                                Image(uiImage: UIImage(contentsOfFile: imagePath)!)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(height: 100)
+                            }
                         }
-                        .padding()
-                        
-                        if let imagePath = capturedPhotoPath {
-                            Image(uiImage: UIImage(contentsOfFile: imagePath)!)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(height: 100)
-                        }
+                    }
+                    .navigationDestination(isPresented: $shouldNavigate) {
+                        DetailsScreenView(photoPath: capturedPhotoPath ?? "")
                     }
                 }
             }
         }
         .onAppear {
             Task {
-                shouldNavigate = false
-                
-                await viewModel.requestCameraPermission()
+                if viewModel.isCameraPermissionGranted == nil {
+                    await viewModel.requestCameraPermission()
+                }
                 
                 if viewModel.isCameraPermissionGranted == true {
                     viewModel.startCameraSession()
@@ -66,6 +71,11 @@ struct CameraScreenView: View {
                 } else {
                     showPermissionAlert = true
                 }
+            }
+        }
+        .onChange(of: shouldNavigate) {
+            if !shouldNavigate { //SwiftUI automatically changes shouldNavigate to false when back button from navigation is clicked
+                viewModel.startCameraSession()
             }
         }
         .alert(isPresented: $showPermissionAlert) {
@@ -78,9 +88,6 @@ struct CameraScreenView: View {
                 secondaryButton: .cancel()
             )
         }
-//        .navigationDestination(isPresented: $shouldNavigate) {
-//            NextScreen(photoPath: capturedPhotoPath ?? "")
-//        }
     }
     
     func openSettings() {
