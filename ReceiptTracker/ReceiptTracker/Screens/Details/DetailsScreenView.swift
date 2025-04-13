@@ -1,9 +1,11 @@
 import SwiftUI
+import Toasts
 import CoreData
 
 struct DetailsScreenView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.presentToast) var presentToast
     
     let photoPath: String
     @State private var isImageFullscreen = false
@@ -119,6 +121,8 @@ struct DetailsScreenView: View {
                                     currency: selectedCurrency,
                                     vendor: vendorText.isEmpty ? nil : vendorText,
                                     notes: notesText.isEmpty ? nil : notesText)
+                                
+                                presentToast(ToastValue(message: "Success!"))
                                 
                                 dismiss()
                             } catch {

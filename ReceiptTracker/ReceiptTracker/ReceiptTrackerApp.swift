@@ -1,4 +1,5 @@
 import SwiftUI
+import Toasts
 
 @main
 struct ReceiptTrackerApp: App {
@@ -8,6 +9,7 @@ struct ReceiptTrackerApp: App {
         WindowGroup {
             ContentView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                .installToast(position: .bottom)
         }
     }
 }

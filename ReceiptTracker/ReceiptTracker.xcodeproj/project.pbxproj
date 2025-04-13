@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		69E7D26E2DAC2661009154FF /* Toasts in Frameworks */ = {isa = PBXBuildFile; productRef = 69E7D26D2DAC2661009154FF /* Toasts */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		69B6BE3F2DA808920043AE87 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				69E7D26E2DAC2661009154FF /* Toasts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +117,7 @@
 			);
 			name = ReceiptTracker;
 			packageProductDependencies = (
+				69E7D26D2DAC2661009154FF /* Toasts */,
 			);
 			productName = ReceiptTracker;
 			productReference = 69B6BE2C2DA808900043AE87 /* ReceiptTracker.app */;
@@ -195,6 +201,9 @@
 			);
 			mainGroup = 69B6BE232DA808900043AE87;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				69E7D26C2DAC2661009154FF /* XCRemoteSwiftPackageReference "swiftui-toasts" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 69B6BE2D2DA808900043AE87 /* Products */;
 			projectDirPath = "";
@@ -566,6 +575,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		69E7D26C2DAC2661009154FF /* XCRemoteSwiftPackageReference "swiftui-toasts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sunghyun-k/swiftui-toasts";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		69E7D26D2DAC2661009154FF /* Toasts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 69E7D26C2DAC2661009154FF /* XCRemoteSwiftPackageReference "swiftui-toasts" */;
+			productName = Toasts;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 69B6BE242DA808900043AE87 /* Project object */;
 }
