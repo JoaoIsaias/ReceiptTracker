@@ -76,9 +76,13 @@ struct DetailsScreenView: View {
                                     Text($0)
                                 }
                             }
-                            
                         }
-                        .padding(.bottom)
+                        
+                        if amount <= 0 {
+                            Text("Amount must be greater than 0.")
+                                .foregroundColor(.red)
+                                .font(.caption)
+                        }
                         
                         VStack(alignment: .leading) {
                             Text("Vendor")
@@ -92,7 +96,7 @@ struct DetailsScreenView: View {
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                             
                         }
-                        .padding(.bottom)
+                        .padding(.vertical)
                         
                         VStack(alignment: .leading) {
                             Text("Extra notes")
@@ -130,6 +134,7 @@ struct DetailsScreenView: View {
                             }
                         }
                     }
+                    .disabled(amount <= 0)
                     .buttonStyle(.borderedProminent)
                     .buttonBorderShape(.roundedRectangle)
                     .padding()
