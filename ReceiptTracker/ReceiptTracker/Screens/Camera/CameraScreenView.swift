@@ -44,13 +44,6 @@ struct CameraScreenView: View {
                                 }
                             }
                             .padding()
-                            
-                            if let imagePath = capturedPhotoPath {
-                                Image(uiImage: UIImage(contentsOfFile: imagePath)!)
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(height: 100)
-                            }
                         }
                     }
                     .navigationDestination(isPresented: $shouldNavigate) {
