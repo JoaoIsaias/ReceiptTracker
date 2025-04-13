@@ -1,4 +1,5 @@
 import Foundation
+import CoreData
 import AVFoundation
 import Combine
 
@@ -17,6 +18,7 @@ class CameraScreenViewModel: ObservableObject {
             .assign(to: &$isCameraSessionRunning)
     }
     
+    //MARK: - Camera
     func getCameraSession() -> AVCaptureSession? {
         if let cameraManager = cameraManager as? CameraManager {
             return cameraManager.session
@@ -42,6 +44,28 @@ class CameraScreenViewModel: ObservableObject {
             return try await cameraManager.capturePhoto()
         } catch {
             print("Error capturing photo: \(error)")
+            return nil
+        }
+    }
+    
+    //MARK: - CoreData
+    func fetchLatestPhotoPath(context: NSManagedObjectContext) async -> String? {
+        await context.perform {
+            let fetchRequest: NSFetchRequest<ReceiptInfo> = ReceiptInfo.fetchRequest()
+            fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \ReceiptInfo.createdAt, ascending: false)]
+            fetchRequest.fetchLimit = 1
+            
+            do {
+                let receipts = try context.fetch(fetchRequest)
+                if let latestReceipt = receipts.first, let oldPath = latestReceipt.imagePath {
+                    let imageName = String(oldPath.split(separator: "/").last ?? "")
+                    let newPath = URL.documentsDirectory.appendingPathComponent(imageName)
+                    return newPath.path
+                }
+            } catch {
+                print("Error fetching latest photo: \(error)")
+                return nil
+            }
             return nil
         }
     }

@@ -118,8 +118,7 @@ public class CameraManager: NSObject, CameraManagerProtocol {
 
     private func saveImageToDisk(_ data: Data) -> String? {
         let filename = UUID().uuidString + ".jpg"
-        let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let fileURL = directory.appendingPathComponent(filename)
+        let fileURL = URL.documentsDirectory.appendingPathComponent(filename)
 
         do {
             try data.write(to: fileURL)

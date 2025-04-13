@@ -2,9 +2,13 @@ import SwiftUI
 import CoreData
 
 struct CameraScreenView: View {
+    @Environment(\.managedObjectContext) private var viewContext
+    
     @StateObject private var viewModel = CameraScreenViewModel()
     
     @State private var capturedPhotoPath: String? = nil
+    @State private var lastPhotoPath: String? = nil
+    
     @State private var shouldNavigate = false
     @State private var showPermissionAlert = false
     
@@ -30,8 +34,25 @@ struct CameraScreenView: View {
                             CameraPreview(isSessionRunning: $viewModel.isCameraSessionRunning, session: viewModel.getCameraSession())
                                 .frame(height: UIScreen.main.bounds.height*0.6)
                             
-                            
-                            HStack {
+                            ZStack {
+                                HStack() {
+                                    if let path = lastPhotoPath {
+                                        if let image = UIImage(contentsOfFile: path) {
+                                            //                                    NavigationLink(destination: GalleryScreen()) {
+                                            Image(uiImage: image)
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: 60, height: 60)
+                                                .clipped()
+                                                .cornerRadius(8)
+                                                .padding([.leading, .bottom], 16)
+                                            //                                    }
+                                        }
+                                    }
+                                    Spacer()
+                                }
+                                
+                                
                                 CustomCaptureButton {
                                     Task {
                                         capturedPhotoPath = await viewModel.capturePhoto()
@@ -54,6 +75,8 @@ struct CameraScreenView: View {
         }
         .onAppear {
             Task {
+                lastPhotoPath = await viewModel.fetchLatestPhotoPath(context: viewContext)
+                
                 if viewModel.isCameraPermissionGranted == nil {
                     await viewModel.requestCameraPermission()
                 }
