@@ -38,15 +38,15 @@ struct CameraScreenView: View {
                                 HStack() {
                                     if let path = lastPhotoPath {
                                         if let image = UIImage(contentsOfFile: path) {
-                                            //                                    NavigationLink(destination: GalleryScreen()) {
-                                            Image(uiImage: image)
-                                                .resizable()
-                                                .scaledToFill()
-                                                .frame(width: 60, height: 60)
-                                                .clipped()
-                                                .cornerRadius(8)
-                                                .padding([.leading, .bottom], 16)
-                                            //                                    }
+                                            NavigationLink(destination: GalleryScreenView()) {
+                                                Image(uiImage: image)
+                                                    .resizable()
+                                                    .scaledToFill()
+                                                    .frame(width: 60, height: 60)
+                                                    .clipped()
+                                                    .cornerRadius(8)
+                                                    .padding([.leading, .bottom], 16)
+                                            }
                                         }
                                     }
                                     Spacer()
