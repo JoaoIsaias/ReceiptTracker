@@ -18,31 +18,29 @@ struct GalleryScreenView: View {
     ]
     
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                LazyVGrid(columns: columns, spacing: 10) {
-                    ForEach(Array(viewModel.photoPaths.enumerated()), id: \.offset) { index, path in
-                        ThumbnailImageView(path: path)
-                            .onTapGesture {
-                                selectedPhotoPath = path
-                                shouldNavigate = true
+        ScrollView {
+            LazyVGrid(columns: columns, spacing: 10) {
+                ForEach(viewModel.photoPaths, id: \.self) { path in
+                    ThumbnailImageView(path: path)
+                        .onTapGesture {
+                            selectedPhotoPath = path
+                            shouldNavigate = true
+                        }
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                viewModel.deletePhoto(at: path, context: viewContext)
+                                
+                                presentToast(ToastValue(message: "Receipt/Invoice deleted!"))
+                            } label: {
+                                Label("Delete", systemImage: "trash")
                             }
-                            .contextMenu {
-                                Button(role: .destructive) {
-                                    viewModel.deletePhoto(at: index, context: viewContext)
-                                    
-                                    presentToast(ToastValue(message: "Receipt/Invoice deleted!"))
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                            }
-                    }
+                        }
                 }
-                .padding()
             }
-            .navigationDestination(isPresented: $shouldNavigate) {
-                DetailsScreenView(photoPath: selectedPhotoPath)
-            }
+            .padding()
+        }
+        .navigationDestination(isPresented: $shouldNavigate) {
+            DetailsScreenView(photoPath: selectedPhotoPath)
         }
         .onAppear {
             Task {
