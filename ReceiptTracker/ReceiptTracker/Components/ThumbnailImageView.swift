@@ -23,12 +23,12 @@ struct ThumbnailImageView: View {
                 ProgressView() //Placeholder
             }
         }
-        .frame(width: width, height: width)
+        .frame(width: width, height: height)
         .clipped()
         .cornerRadius(8)
         .task {
             guard let image = UIImage(contentsOfFile: path),
-                  let imageThumbnail = await image.byPreparingThumbnail(ofSize: CGSize(width: width, height: width)) else {
+                  let imageThumbnail = await image.byPreparingThumbnail(ofSize: CGSize(width: width, height: height)) else {
                 return
             }
             thumbnail = imageThumbnail
