@@ -1,8 +1,10 @@
 import SwiftUI
 import CoreData
+import Toasts
 
 struct GalleryScreenView: View {
     @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.presentToast) var presentToast
     
     @StateObject private var viewModel = GalleryScreenViewModel()
     
@@ -16,24 +18,19 @@ struct GalleryScreenView: View {
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 10) {
                     ForEach(Array(viewModel.photoPaths.enumerated()), id: \.offset) { index, path in
-                        if let image = UIImage(contentsOfFile: path) {
-                            Image(uiImage: image)
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 100, height: 100)
-                                .clipped()
-                                .cornerRadius(8)
-                                .onTapGesture {
-                                    //Open Details Screen
+                        ThumbnailImageView(path: path)
+                            .onTapGesture {
+                                //Open Details Screen
+                            }
+                            .contextMenu {
+                                Button(role: .destructive) {
+                                    viewModel.deletePhoto(at: index, context: viewContext)
+                                    
+                                    presentToast(ToastValue(message: "Receipt/Invoice deleted!"))
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
                                 }
-                                .contextMenu {
-                                    Button(role: .destructive) {
-                                        viewModel.deletePhoto(at: index, context: viewContext)
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
-                                    }
-                                }
-                        }
+                            }
                     }
                 }
                 .padding()

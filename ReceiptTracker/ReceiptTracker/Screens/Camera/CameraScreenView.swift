@@ -38,19 +38,10 @@ struct CameraScreenView: View {
                             ZStack {
                                 HStack() {
                                     if let path = viewModel.lastPhotoPath {
-                                        if let image = UIImage(contentsOfFile: path) {
-                                            Button(action: {
+                                        ThumbnailImageView(path: path, width: 60, height: 60)
+                                            .onTapGesture {
                                                 shouldNavigateToGallery = true
-                                            }) {
-                                                Image(uiImage: image)
-                                                    .resizable()
-                                                    .scaledToFill()
-                                                    .frame(width: 60, height: 60)
-                                                    .clipped()
-                                                    .cornerRadius(8)
-                                                    .padding([.leading, .bottom], 16)
                                             }
-                                        }
                                     }
                                     Spacer()
                                 }
@@ -126,23 +117,6 @@ struct CameraScreenView: View {
     func openSettings() {
         guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
         UIApplication.shared.open(settingsURL)
-    }
-}
-
-struct CustomCaptureButton: View {
-    var action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            Circle()
-                .foregroundColor(.white)
-                .frame(width: 70, height: 70, alignment: .center)
-                .overlay(
-                    Circle()
-                        .stroke(Color.black.opacity(0.8), lineWidth: 2)
-                        .frame(width: 60, height: 60, alignment: .center)
-                )
-        }
     }
 }
 
