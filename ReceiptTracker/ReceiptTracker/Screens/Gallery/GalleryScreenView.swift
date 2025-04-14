@@ -8,6 +8,9 @@ struct GalleryScreenView: View {
     
     @StateObject private var viewModel = GalleryScreenViewModel()
     
+    @State private var shouldNavigate = false
+    @State private var selectedPhotoPath: String = ""
+    
     let columns = [
         GridItem(.flexible()),
         GridItem(.flexible()),
@@ -15,12 +18,14 @@ struct GalleryScreenView: View {
     ]
     
     var body: some View {
+        NavigationStack {
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 10) {
                     ForEach(Array(viewModel.photoPaths.enumerated()), id: \.offset) { index, path in
                         ThumbnailImageView(path: path)
                             .onTapGesture {
-                                //Open Details Screen
+                                selectedPhotoPath = path
+                                shouldNavigate = true
                             }
                             .contextMenu {
                                 Button(role: .destructive) {
@@ -35,12 +40,16 @@ struct GalleryScreenView: View {
                 }
                 .padding()
             }
-            .onAppear {
-                Task {
-                    await viewModel.fetchAllPhotoPaths(context: viewContext)
-                }
+            .navigationDestination(isPresented: $shouldNavigate) {
+                DetailsScreenView(photoPath: selectedPhotoPath)
             }
         }
+        .onAppear {
+            Task {
+                await viewModel.fetchAllPhotoPaths(context: viewContext)
+            }
+        }
+    }
 }
 
 #Preview {

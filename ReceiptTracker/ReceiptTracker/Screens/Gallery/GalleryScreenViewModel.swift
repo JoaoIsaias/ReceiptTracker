@@ -50,6 +50,7 @@ class GalleryScreenViewModel: ObservableObject {
             matches.forEach(context.delete)
             try context.save()
         } catch {
+            context.rollback()
             print("CoreData delete error: \(error)")
         }
 
