@@ -22,6 +22,8 @@ struct DetailsScreenView: View {
     @FocusState private var isVendorFocused: Bool
     @FocusState private var isNotesFocused: Bool
     
+    @State private var showBackConfirmation = false
+    
     @StateObject private var viewModel = DetailsScreenViewModel()
     
     var body: some View {
@@ -126,7 +128,7 @@ struct DetailsScreenView: View {
                                     vendor: vendorText.isEmpty ? nil : vendorText,
                                     notes: notesText.isEmpty ? nil : notesText)
                                 
-                                presentToast(ToastValue(message: "Success!"))
+                                presentToast(ToastValue(message: "Receipt/Invoice saved!"))
                                 
                                 dismiss()
                             } catch {
@@ -173,14 +175,36 @@ struct DetailsScreenView: View {
             }
         }
         .toolbar {
-            if isAmountFocused {
-                Button("Done") {
-                    isAmountFocused = false
+            ToolbarItem(placement: .navigationBarLeading) {
+                if !isImageFullscreen {
+                    Button(action: {
+                        showBackConfirmation = true
+                    }) {
+                        HStack {
+                            Image(systemName: "chevron.left")
+                            Text("Back")
+                        }
+                    }
+                }
+            }
+            
+            ToolbarItem(placement: .keyboard) {
+                if isAmountFocused {
+                    Button("Done") {
+                        isAmountFocused = false
+                    }
                 }
             }
         }
         .animation(.easeInOut, value: isImageFullscreen)
-        .navigationBarBackButtonHidden(isImageFullscreen)
+        .navigationBarBackButtonHidden(true)
+        .alert("Do you want to discard this receipt/invoice?", isPresented: $showBackConfirmation) {
+            Button("Confirm", role: .destructive) {
+                viewModel.deleteImageFromDisk(imagePath: photoPath)
+                dismiss()
+            }
+            Button("Cancel", role: .cancel) {}
+        }
     }
 }
 

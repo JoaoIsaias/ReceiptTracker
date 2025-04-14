@@ -22,4 +22,15 @@ class DetailsScreenViewModel: ObservableObject {
             throw error
         }
     }
+    
+    func deleteImageFromDisk(imagePath: String) {
+        let fileURL = URL(fileURLWithPath: imagePath)
+
+        do {
+            try FileManager.default.removeItem(at: fileURL)
+            print("Image deleted successfully.")
+        } catch {
+            print("Error deleting image: \(error)")
+        }
+    }
 }

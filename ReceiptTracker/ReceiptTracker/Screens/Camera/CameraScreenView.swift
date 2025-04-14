@@ -2,10 +2,15 @@ import SwiftUI
 import CoreData
 
 struct CameraScreenView: View {
+    @Environment(\.managedObjectContext) private var viewContext
+    
     @StateObject private var viewModel = CameraScreenViewModel()
     
     @State private var capturedPhotoPath: String? = nil
-    @State private var shouldNavigate = false
+    
+    @State private var shouldNavigateToDetails = false
+    @State private var shouldNavigateToGallery = false
+    
     @State private var showPermissionAlert = false
     
     var body: some View {
@@ -30,15 +35,25 @@ struct CameraScreenView: View {
                             CameraPreview(isSessionRunning: $viewModel.isCameraSessionRunning, session: viewModel.getCameraSession())
                                 .frame(height: UIScreen.main.bounds.height*0.6)
                             
-                            
-                            HStack {
+                            ZStack {
+                                HStack() {
+                                    if let path = viewModel.lastPhotoPath {
+                                        ThumbnailImageView(path: path, width: 60, height: 60)
+                                            .onTapGesture {
+                                                shouldNavigateToGallery = true
+                                            }
+                                    }
+                                    Spacer()
+                                }
+                                
+                                
                                 CustomCaptureButton {
                                     Task {
                                         capturedPhotoPath = await viewModel.capturePhoto()
                                         viewModel.stopCameraSession()
                                         
                                         if capturedPhotoPath != nil {
-                                            shouldNavigate = true
+                                            shouldNavigateToDetails = true
                                         }
                                     }
                                 }
@@ -46,14 +61,35 @@ struct CameraScreenView: View {
                             .padding()
                         }
                     }
-                    .navigationDestination(isPresented: $shouldNavigate) {
+                    .navigationDestination(isPresented: $shouldNavigateToDetails) {
                         DetailsScreenView(photoPath: capturedPhotoPath ?? "")
                     }
+                    .navigationDestination(isPresented: $shouldNavigateToGallery) {
+                        GalleryScreenView()
+                    }
+                }
+            }
+        }
+        .onChange(of: shouldNavigateToDetails) {
+            Task {
+                if !shouldNavigateToDetails { //SwiftUI automatically changes shouldNavigate to false when back button from navigation is clicked
+                    viewModel.startCameraSession()
+                    await viewModel.fetchLatestPhotoPath(context: viewContext)
+                }
+            }
+        }
+        .onChange(of: shouldNavigateToGallery) {
+            Task {
+                if !shouldNavigateToGallery {
+                    viewModel.startCameraSession()
+                    await viewModel.fetchLatestPhotoPath(context: viewContext)
                 }
             }
         }
         .onAppear {
             Task {
+                await viewModel.fetchLatestPhotoPath(context: viewContext)
+                
                 if viewModel.isCameraPermissionGranted == nil {
                     await viewModel.requestCameraPermission()
                 }
@@ -64,11 +100,6 @@ struct CameraScreenView: View {
                 } else {
                     showPermissionAlert = true
                 }
-            }
-        }
-        .onChange(of: shouldNavigate) {
-            if !shouldNavigate { //SwiftUI automatically changes shouldNavigate to false when back button from navigation is clicked
-                viewModel.startCameraSession()
             }
         }
         .alert(isPresented: $showPermissionAlert) {
@@ -86,23 +117,6 @@ struct CameraScreenView: View {
     func openSettings() {
         guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
         UIApplication.shared.open(settingsURL)
-    }
-}
-
-struct CustomCaptureButton: View {
-    var action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            Circle()
-                .foregroundColor(.white)
-                .frame(width: 70, height: 70, alignment: .center)
-                .overlay(
-                    Circle()
-                        .stroke(Color.black.opacity(0.8), lineWidth: 2)
-                        .frame(width: 60, height: 60, alignment: .center)
-                )
-        }
     }
 }
 
