@@ -130,13 +130,15 @@ struct DetailsScreenView: View {
                                 
                                 presentToast(ToastValue(message: "Receipt/Invoice saved!"))
                                 
-                                dismiss()
+                                if viewModel.existingReceipt == nil {
+                                    dismiss()
+                                }
                             } catch {
                                 print("Failed to save: \(error)")
                             }
                         }
                     }
-                    .disabled(amount <= 0)
+                    .disabled(viewModel.existingReceipt == nil ? amount <= 0 : !existingDataHasChanges())
                     .buttonStyle(.borderedProminent)
                     .buttonBorderShape(.roundedRectangle)
                     .padding()
@@ -174,11 +176,28 @@ struct DetailsScreenView: View {
                 }
             }
         }
+        .onAppear {
+            Task {
+                let receipt = await viewModel.fetchReceipt(context: viewContext, imagePath: photoPath)
+                
+                if let receipt = receipt {
+                    date = receipt.date ?? Date()
+                    amount = receipt.amount
+                    selectedCurrency = receipt.currency ?? "Euro (€)"
+                    vendorText = receipt.vendor ?? ""
+                    notesText = receipt.notes ?? ""
+                }
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 if !isImageFullscreen {
                     Button(action: {
-                        showBackConfirmation = true
+                        if viewModel.existingReceipt == nil {
+                            showBackConfirmation = true
+                        } else {
+                            dismiss()
+                        }
                     }) {
                         HStack {
                             Image(systemName: "chevron.left")
@@ -205,6 +224,20 @@ struct DetailsScreenView: View {
             }
             Button("Cancel", role: .cancel) {}
         }
+    }
+    
+    private func existingDataHasChanges() -> Bool {
+        if let existingReceipt = viewModel.existingReceipt {
+            let vendorChanges = existingReceipt.vendor == nil ? vendorText != "" : existingReceipt.vendor != vendorText
+            let notesChanges = existingReceipt.notes == nil ? notesText != "" : existingReceipt.notes != notesText
+            
+            return existingReceipt.date != date ||
+                   existingReceipt.amount != amount ||
+                   existingReceipt.currency != selectedCurrency ||
+                   vendorChanges ||
+                   notesChanges
+        }
+        return false
     }
 }
 

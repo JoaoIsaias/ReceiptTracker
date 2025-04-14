@@ -41,6 +41,7 @@ struct CameraScreenView: View {
                                         ThumbnailImageView(path: path, width: 60, height: 60)
                                             .onTapGesture {
                                                 shouldNavigateToGallery = true
+                                                viewModel.lastPhotoPath = nil //Helps SwiftUI loading lastPhotoPath correctly when returning to view
                                             }
                                     }
                                     Spacer()
@@ -54,6 +55,7 @@ struct CameraScreenView: View {
                                         
                                         if capturedPhotoPath != nil {
                                             shouldNavigateToDetails = true
+                                            viewModel.lastPhotoPath = nil
                                         }
                                     }
                                 }

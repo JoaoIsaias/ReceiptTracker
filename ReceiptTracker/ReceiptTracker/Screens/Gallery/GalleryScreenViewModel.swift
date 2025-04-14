@@ -31,9 +31,7 @@ class GalleryScreenViewModel: ObservableObject {
         }
     }
     
-    func deletePhoto(at index: Int, context: NSManagedObjectContext) {
-        let path = photoPaths[index]
-
+    func deletePhoto(at path: String, context: NSManagedObjectContext) {
         do {
             try FileManager.default.removeItem(atPath: path)
         } catch {
@@ -50,9 +48,12 @@ class GalleryScreenViewModel: ObservableObject {
             matches.forEach(context.delete)
             try context.save()
         } catch {
+            context.rollback()
             print("CoreData delete error: \(error)")
         }
 
-        photoPaths.remove(at: index)
+        if let index = photoPaths.firstIndex(of: path) {
+            photoPaths.remove(at: index)
+        }
     }
 }
