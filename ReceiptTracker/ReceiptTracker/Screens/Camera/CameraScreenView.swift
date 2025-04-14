@@ -7,9 +7,10 @@ struct CameraScreenView: View {
     @StateObject private var viewModel = CameraScreenViewModel()
     
     @State private var capturedPhotoPath: String? = nil
-    @State private var lastPhotoPath: String? = nil
     
-    @State private var shouldNavigate = false
+    @State private var shouldNavigateToDetails = false
+    @State private var shouldNavigateToGallery = false
+    
     @State private var showPermissionAlert = false
     
     var body: some View {
@@ -36,9 +37,11 @@ struct CameraScreenView: View {
                             
                             ZStack {
                                 HStack() {
-                                    if let path = lastPhotoPath {
+                                    if let path = viewModel.lastPhotoPath {
                                         if let image = UIImage(contentsOfFile: path) {
-                                            NavigationLink(destination: GalleryScreenView()) {
+                                            Button(action: {
+                                                shouldNavigateToGallery = true
+                                            }) {
                                                 Image(uiImage: image)
                                                     .resizable()
                                                     .scaledToFill()
@@ -59,7 +62,7 @@ struct CameraScreenView: View {
                                         viewModel.stopCameraSession()
                                         
                                         if capturedPhotoPath != nil {
-                                            shouldNavigate = true
+                                            shouldNavigateToDetails = true
                                         }
                                     }
                                 }
@@ -67,15 +70,34 @@ struct CameraScreenView: View {
                             .padding()
                         }
                     }
-                    .navigationDestination(isPresented: $shouldNavigate) {
+                    .navigationDestination(isPresented: $shouldNavigateToDetails) {
                         DetailsScreenView(photoPath: capturedPhotoPath ?? "")
                     }
+                    .navigationDestination(isPresented: $shouldNavigateToGallery) {
+                        GalleryScreenView()
+                    }
+                }
+            }
+        }
+        .onChange(of: shouldNavigateToDetails) {
+            Task {
+                if !shouldNavigateToDetails { //SwiftUI automatically changes shouldNavigate to false when back button from navigation is clicked
+                    viewModel.startCameraSession()
+                    await viewModel.fetchLatestPhotoPath(context: viewContext)
+                }
+            }
+        }
+        .onChange(of: shouldNavigateToGallery) {
+            Task {
+                if !shouldNavigateToGallery {
+                    viewModel.startCameraSession()
+                    await viewModel.fetchLatestPhotoPath(context: viewContext)
                 }
             }
         }
         .onAppear {
             Task {
-                lastPhotoPath = await viewModel.fetchLatestPhotoPath(context: viewContext)
+                await viewModel.fetchLatestPhotoPath(context: viewContext)
                 
                 if viewModel.isCameraPermissionGranted == nil {
                     await viewModel.requestCameraPermission()
@@ -87,11 +109,6 @@ struct CameraScreenView: View {
                 } else {
                     showPermissionAlert = true
                 }
-            }
-        }
-        .onChange(of: shouldNavigate) {
-            if !shouldNavigate { //SwiftUI automatically changes shouldNavigate to false when back button from navigation is clicked
-                viewModel.startCameraSession()
             }
         }
         .alert(isPresented: $showPermissionAlert) {

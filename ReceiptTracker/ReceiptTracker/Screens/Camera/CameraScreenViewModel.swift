@@ -8,6 +8,8 @@ class CameraScreenViewModel: ObservableObject {
     @Published var isCameraPermissionGranted: Bool? = nil
     @Published var isCameraSessionRunning = false
     
+    @Published var lastPhotoPath: String? = nil
+    
     private let cameraManager: CameraManagerProtocol
 
     init(cameraManager: CameraManagerProtocol = CameraManager.shared) {
@@ -49,7 +51,7 @@ class CameraScreenViewModel: ObservableObject {
     }
     
     //MARK: - CoreData
-    func fetchLatestPhotoPath(context: NSManagedObjectContext) async -> String? {
+    func fetchLatestPhotoPath(context: NSManagedObjectContext) async {
         await context.perform {
             let fetchRequest: NSFetchRequest<ReceiptInfo> = ReceiptInfo.fetchRequest()
             fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \ReceiptInfo.createdAt, ascending: false)]
@@ -60,13 +62,15 @@ class CameraScreenViewModel: ObservableObject {
                 if let latestReceipt = receipts.first, let oldPath = latestReceipt.imagePath {
                     let imageName = String(oldPath.split(separator: "/").last ?? "")
                     let newPath = URL.documentsDirectory.appendingPathComponent(imageName)
-                    return newPath.path
+                    
+                    DispatchQueue.main.async {
+                        self.lastPhotoPath = newPath.path
+                    }
+                    
                 }
             } catch {
                 print("Error fetching latest photo: \(error)")
-                return nil
             }
-            return nil
         }
     }
 }
