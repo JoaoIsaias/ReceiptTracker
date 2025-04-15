@@ -11,23 +11,23 @@ final class ReceiptTrackerTests: XCTestCase {
     var cancellables: Set<AnyCancellable> = []
     
     var detailsScreenViewModel: DetailsScreenViewModel!
+    
+    var galleryScreenViewModel: GalleryScreenViewModel!
 
-    //Added to setUpWithError()
-//    override func setUp() {
-//        super.setUp()
-//        
-//        mockCameraManager = MockCameraManager()
-//    }
-
-    override func tearDown() {
-        mockCameraManager = nil
-        
-        cameraScreenViewModel = nil
-        cancellables.removeAll()
-        
-        super.tearDown()
+    func makeMockReceipt(context: NSManagedObjectContext) -> ReceiptInfo {
+        let receiptInfo = ReceiptInfo(context: context)
+        receiptInfo.id = UUID()
+        receiptInfo.imagePath = "/path/image123.jpg"
+        receiptInfo.createdAt = Date()
+        receiptInfo.date = Date()
+        receiptInfo.amount = 10.0
+        receiptInfo.currency = "EUR"
+        receiptInfo.vendor = "Vendor A"
+        receiptInfo.notes = "Notes"
+        return receiptInfo
     }
     
+    //MARK: - Setup
     override func setUpWithError() throws {
         try super.setUpWithError()
 
@@ -47,14 +47,19 @@ final class ReceiptTrackerTests: XCTestCase {
 
     override func tearDownWithError() throws {
         viewContext = nil
+        mockCameraManager = nil
+        cancellables.removeAll()
         
         cameraScreenViewModel = nil
         detailsScreenViewModel = nil
+        galleryScreenViewModel = nil
+        
+        try super.tearDownWithError()
     }
     
     //MARK: - CameraScreenViewModel
     
-    //MainActors cant be setUp in normal setUp, so their setUp function must be called each time they have to be used
+    //MainActors cant be setup in normal setUp, so their setUp function must be called each time they have to be used
     @MainActor
     func setupCameraScreenViewModel() {
         cameraScreenViewModel = CameraScreenViewModel(cameraManager: mockCameraManager)
@@ -103,9 +108,7 @@ final class ReceiptTrackerTests: XCTestCase {
     func testFetchUpdatesLastPhotoPath() async {
         await setupCameraScreenViewModel()
         
-        let receiptInfo = ReceiptInfo(context: viewContext)
-        receiptInfo.createdAt = Date()
-        receiptInfo.imagePath = "/path/image123.jpg"
+        _ = makeMockReceipt(context: viewContext)
 
         try? viewContext.save()
 
@@ -127,10 +130,7 @@ final class ReceiptTrackerTests: XCTestCase {
     func testFetchFindsMatchingReceipt() async throws {
         await setupDetailsScreenViewModel()
         
-        let receiptInfo = ReceiptInfo(context: viewContext)
-        receiptInfo.id = UUID()
-        receiptInfo.imagePath = "/path/image123.jpg"
-        receiptInfo.createdAt = Date()
+        _ = makeMockReceipt(context: viewContext)
 
         try viewContext.save()
 
@@ -183,13 +183,7 @@ final class ReceiptTrackerTests: XCTestCase {
     func testSaveOnCoreDataExistingReceipt() async throws {
         await setupDetailsScreenViewModel()
         
-        let receiptInfo = ReceiptInfo(context: viewContext)
-        receiptInfo.id = UUID()
-        receiptInfo.imagePath = "/path/image123.jpg"
-        receiptInfo.amount = 10.0
-        receiptInfo.currency = "EUR"
-        receiptInfo.vendor = "Vendor A"
-        receiptInfo.notes = "Notes"
+        let receiptInfo = makeMockReceipt(context: viewContext)
         
         try viewContext.save()
 
@@ -215,12 +209,59 @@ final class ReceiptTrackerTests: XCTestCase {
     func testDeleteImageFromDisk() async throws {
         await setupDetailsScreenViewModel()
 
-        let tempURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("image123.jpg")
-        try "test".write(to: tempURL, atomically: true, encoding: .utf8)
-        XCTAssertTrue(FileManager.default.fileExists(atPath: tempURL.path))
+        let url = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("image123.jpg")
+        try "test".write(to: url, atomically: true, encoding: .utf8)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
 
-        await detailsScreenViewModel.deleteImageFromDisk(imagePath: tempURL.path)
-        XCTAssertFalse(FileManager.default.fileExists(atPath: tempURL.path))
+        await detailsScreenViewModel.deleteImageFromDisk(imagePath: url.path)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
     }
+    
+    // MARK: - GalleryScreenViewModel
+    
+    @MainActor
+    func setupGalleryScreenViewModel() async {
+        galleryScreenViewModel = GalleryScreenViewModel()
+    }
+    
+    func testFetchAllPhotoPaths() async throws {
+        await setupGalleryScreenViewModel()
+
+        _ = makeMockReceipt(context: viewContext)
+
+        try viewContext.save()
+
+        await galleryScreenViewModel.fetchAllPhotoPaths(context: viewContext)
+
+        let path = URL.documentsDirectory.appendingPathComponent("image123.jpg").path
+        let photoPaths = await MainActor.run { galleryScreenViewModel.photoPaths }
+
+        XCTAssertEqual(photoPaths, [path])
+    }
+    
+    func testDeletePhoto() async throws {
+        await setupGalleryScreenViewModel()
+
+        let photoName = "image123.jpg"
+        let photoPath = URL.documentsDirectory.appendingPathComponent(photoName).path
+
+        FileManager.default.createFile(atPath: photoPath, contents: Data())
+
+        _ = makeMockReceipt(context: viewContext)
+        try viewContext.save()
+
+        await MainActor.run { galleryScreenViewModel.photoPaths = [photoPath] }
+        
+        await galleryScreenViewModel.deletePhoto(at: photoPath, context: viewContext)
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: photoPath))
+        
+        let photoPaths = await MainActor.run { galleryScreenViewModel.photoPaths }
+        XCTAssertTrue(photoPaths.isEmpty)
+
+        let results = try viewContext.fetch(ReceiptInfo.fetchRequest())
+        XCTAssertTrue(results.isEmpty)
+    }
+
 
 }
