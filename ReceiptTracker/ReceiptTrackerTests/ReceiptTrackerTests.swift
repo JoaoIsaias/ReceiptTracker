@@ -9,6 +9,8 @@ final class ReceiptTrackerTests: XCTestCase {
     
     var cameraScreenViewModel: CameraScreenViewModel!
     var cancellables: Set<AnyCancellable> = []
+    
+    var detailsScreenViewModel: DetailsScreenViewModel!
 
     //Added to setUpWithError()
 //    override func setUp() {
@@ -47,7 +49,10 @@ final class ReceiptTrackerTests: XCTestCase {
         viewContext = nil
         
         cameraScreenViewModel = nil
+        detailsScreenViewModel = nil
     }
+    
+    //MARK: - CameraScreenViewModel
     
     //MainActors cant be setUp in normal setUp, so their setUp function must be called each time they have to be used
     @MainActor
@@ -55,7 +60,6 @@ final class ReceiptTrackerTests: XCTestCase {
         cameraScreenViewModel = CameraScreenViewModel(cameraManager: mockCameraManager)
     }
     
-    //MARK: - CameraScreenViewModel
     func testCameraPermissionGranted() async {
         await setupCameraScreenViewModel()
         mockCameraManager.permissionGranted = true
@@ -79,11 +83,11 @@ final class ReceiptTrackerTests: XCTestCase {
 
     func testCapturePhotoSuccess() async {
         await setupCameraScreenViewModel()
-        mockCameraManager.mockCapturedPhotoPath = "/mock/path.jpg"
+        mockCameraManager.mockCapturedPhotoPath = "/path/image123.jpg"
         
         let result = await cameraScreenViewModel.capturePhoto()
         
-        XCTAssertEqual(result, "/mock/path.jpg")
+        XCTAssertEqual(result, "/path/image123.jpg")
         XCTAssertTrue(mockCameraManager.didCapturePhoto)
     }
 
@@ -96,12 +100,12 @@ final class ReceiptTrackerTests: XCTestCase {
         XCTAssertNil(result)
     }
     
-    func testFetchLatestPhotoPath_updatesLastPhotoPath() async {
+    func testFetchUpdatesLastPhotoPath() async {
         await setupCameraScreenViewModel()
         
         let receiptInfo = ReceiptInfo(context: viewContext)
         receiptInfo.createdAt = Date()
-        receiptInfo.imagePath = "/random/path/image123.jpg"
+        receiptInfo.imagePath = "/path/image123.jpg"
 
         try? viewContext.save()
 
@@ -112,4 +116,111 @@ final class ReceiptTrackerTests: XCTestCase {
 
         XCTAssertEqual(lastPhotoPath, expectedPath)
     }
+    
+    // MARK: - DetailsScreenViewModel
+
+    @MainActor
+    func setupDetailsScreenViewModel() async {
+        detailsScreenViewModel = DetailsScreenViewModel()
+    }
+
+    func testFetchFindsMatchingReceipt() async throws {
+        await setupDetailsScreenViewModel()
+        
+        let receiptInfo = ReceiptInfo(context: viewContext)
+        receiptInfo.id = UUID()
+        receiptInfo.imagePath = "/path/image123.jpg"
+        receiptInfo.createdAt = Date()
+
+        try viewContext.save()
+
+        let receipt = await detailsScreenViewModel.fetchReceipt(context: viewContext, imagePath: "/path/image123.jpg")
+        
+        XCTAssertNotNil(receipt)
+        XCTAssertEqual(receipt?.imagePath, "/path/image123.jpg")
+        
+        let existingReceipt = await MainActor.run { detailsScreenViewModel.existingReceipt }
+        XCTAssertEqual(existingReceipt?.imagePath, "/path/image123.jpg")
+    }
+
+    func testFetchReturnsNilWhenNotFound() async {
+        await setupDetailsScreenViewModel()
+        
+        let receipt = await detailsScreenViewModel.fetchReceipt(context: viewContext, imagePath: "/wrongPath/image123.jpg")
+        
+        XCTAssertNil(receipt)
+        let existingReceipt = await MainActor.run { detailsScreenViewModel.existingReceipt }
+        XCTAssertNil(existingReceipt)
+    }
+
+    func testSaveOnCoreDataNewReceipt() async throws {
+        await setupDetailsScreenViewModel()
+        
+        try await detailsScreenViewModel.saveOnCoreData(
+            context: viewContext,
+            imagePath: "/path/image123.jpg",
+            date: Date(),
+            amount: 10.0,
+            currency: "EUR",
+            vendor: "Vendor A",
+            notes: "Notes"
+        )
+
+        let fetchRequest: NSFetchRequest<ReceiptInfo> = ReceiptInfo.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "imagePath == %@", "/path/image123.jpg")
+
+        let results = try viewContext.fetch(fetchRequest)
+
+        XCTAssertEqual(results.count, 1)
+        let receipt = results.first!
+        
+        XCTAssertEqual(receipt.amount, 10.0)
+        XCTAssertEqual(receipt.currency, "EUR")
+        XCTAssertEqual(receipt.vendor, "Vendor A")
+        XCTAssertEqual(receipt.notes, "Notes")
+    }
+
+    func testSaveOnCoreDataExistingReceipt() async throws {
+        await setupDetailsScreenViewModel()
+        
+        let receiptInfo = ReceiptInfo(context: viewContext)
+        receiptInfo.id = UUID()
+        receiptInfo.imagePath = "/path/image123.jpg"
+        receiptInfo.amount = 10.0
+        receiptInfo.currency = "EUR"
+        receiptInfo.vendor = "Vendor A"
+        receiptInfo.notes = "Notes"
+        
+        try viewContext.save()
+
+        await MainActor.run { detailsScreenViewModel.existingReceipt = receiptInfo }
+
+        try await detailsScreenViewModel.saveOnCoreData(
+            context: viewContext,
+            imagePath: "/path/image123.jpg",
+            date: Date(),
+            amount: 20.0,
+            currency: "USD",
+            vendor: "Vendor B",
+            notes: "New Notes"
+        )
+
+        let receipt = try viewContext.fetch(ReceiptInfo.fetchRequest()).first!
+        XCTAssertEqual(receipt.amount, 20.0)
+        XCTAssertEqual(receipt.currency, "USD")
+        XCTAssertEqual(receipt.vendor, "Vendor B")
+        XCTAssertEqual(receipt.notes, "New Notes")
+    }
+
+    func testDeleteImageFromDisk() async throws {
+        await setupDetailsScreenViewModel()
+
+        let tempURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("image123.jpg")
+        try "test".write(to: tempURL, atomically: true, encoding: .utf8)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: tempURL.path))
+
+        await detailsScreenViewModel.deleteImageFromDisk(imagePath: tempURL.path)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: tempURL.path))
+    }
+
 }
