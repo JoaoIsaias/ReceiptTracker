@@ -24,7 +24,12 @@ struct DetailsScreenView: View {
     
     @State private var showBackConfirmation = false
     
-    @StateObject private var viewModel = DetailsScreenViewModel()
+    @StateObject private var viewModel: DetailsScreenViewModel
+    
+    init(viewModel: DetailsScreenViewModel? = nil, photoPath: String? = nil) {
+        _viewModel = StateObject(wrappedValue: viewModel ?? DetailsScreenViewModel())
+        self.photoPath = photoPath ?? ""
+    }
     
     var body: some View {
         ZStack {
@@ -43,6 +48,7 @@ struct DetailsScreenView: View {
                                 isImageFullscreen = true
                             }
                             .padding()
+                            .accessibilityIdentifier("DetailsScreenImage")
                     }
                     
                     Text("Details:")
@@ -67,6 +73,7 @@ struct DetailsScreenView: View {
                                 .fixedSize(horizontal: true, vertical: false)
                                 .keyboardType(.decimalPad)
                                 .focused($isAmountFocused)
+                                .accessibilityIdentifier("AmountTextField")
                             
                             
                             Spacer()
@@ -142,8 +149,10 @@ struct DetailsScreenView: View {
                     .buttonStyle(.borderedProminent)
                     .buttonBorderShape(.roundedRectangle)
                     .padding()
+                    .accessibilityIdentifier("SaveButton")
                 }
             }
+            .accessibilityIdentifier("DetailsScreenView")
             
             // Fullscreen image overlay
             if isImageFullscreen {
@@ -164,6 +173,7 @@ struct DetailsScreenView: View {
                                 .foregroundColor(.white)
                                 .padding()
                         }
+                        .accessibilityIdentifier("FullScreenImageCloseButton")
                     }
                     Spacer()
                 }
@@ -173,6 +183,7 @@ struct DetailsScreenView: View {
                         .resizable()
                         .scaledToFit()
                         .transition(.scale)
+                        .accessibilityIdentifier("FullScreenImage")
                 }
             }
         }
