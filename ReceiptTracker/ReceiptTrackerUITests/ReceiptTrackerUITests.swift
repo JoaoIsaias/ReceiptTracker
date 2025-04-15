@@ -29,8 +29,7 @@ final class ReceiptTrackerUITests: XCTestCase {
     }
 
     func testCaptureButtonVisible() {
-        app.launchArguments = ["-UITestCameraScreen"]
-        app.launchArguments.append("-CameraPermissionGranted")
+        app.launchArguments = ["-UITestCameraScreen", "-CameraPermissionGranted"]
         app.launch()
         
         let capture = app.buttons["CameraScreenCaptureButton"]
@@ -38,8 +37,7 @@ final class ReceiptTrackerUITests: XCTestCase {
     }
 
     func testThumbnailNavigatesToGallery() {
-        app.launchArguments = ["-UITestCameraScreen"]
-        app.launchArguments.append("-CameraPermissionGranted")
+        app.launchArguments = ["-UITestCameraScreen", "-CameraPermissionGranted"]
         app.launch()
         
         let thumbnail = app.images["ThumbnailImage"]
@@ -49,6 +47,19 @@ final class ReceiptTrackerUITests: XCTestCase {
         
         let gallery = app.scrollViews["GalleryScreenView"]
         XCTAssertTrue(gallery.waitForExistence(timeout: 2))
+    }
+    
+    func testCapturePhotoNavigatesToDetails() {
+        app.launchArguments = ["-UITestCameraScreen", "-CameraPermissionGranted"]
+        app.launch()
+        
+        let capture = app.buttons["CameraScreenCaptureButton"]
+        XCTAssertTrue(capture.waitForExistence(timeout: 2))
+        
+        capture.tap()
+        
+        let details = app.scrollViews["DetailsScreenView"]
+        XCTAssertTrue(details.waitForExistence(timeout: 2))
     }
     
     //MARK: - GalleryScreenViewModel
@@ -80,7 +91,7 @@ final class ReceiptTrackerUITests: XCTestCase {
         
         XCTAssertFalse(firstThumbnail.exists)
     }
-    //Needs DetailsScreenView testable to work
+
 //    func testThumbnailNavigatesToDetails() {
 //        app.launchArguments = ["-UITestGalleryScreen"]
 //        app.launch()
@@ -94,4 +105,56 @@ final class ReceiptTrackerUITests: XCTestCase {
 //        let details = app.scrollViews["DetailsScreenView"]
 //        XCTAssertTrue(details.waitForExistence(timeout: 2))
 //    }
+    
+    //MARK: - DetailsScreenViewModel
+    
+    func testFullScreen() {
+        app.launchArguments = ["-UITestDetailsScreen"]
+        app.launch()
+        
+        let image = app.images["DetailsScreenImage"]
+        XCTAssertTrue(image.waitForExistence(timeout: 2))
+        
+        image.tap()
+        
+        let fullScreenImage = app.images["FullScreenImage"]
+        XCTAssertTrue(fullScreenImage.waitForExistence(timeout: 2))
+        
+        let fullScreenImageCloseButton = app.buttons["FullScreenImageCloseButton"]
+        XCTAssertTrue(fullScreenImageCloseButton.waitForExistence(timeout: 2))
+        
+        fullScreenImageCloseButton.tap()
+        
+        XCTAssertFalse(fullScreenImage.exists)
+        XCTAssertFalse(fullScreenImageCloseButton.exists)
+    }
+    
+    func testEditAmountAndSaveButtonBecomesEnabled() {
+        app.launchArguments = ["-UITestDetailsScreen", "-AmountIsZero"]
+        app.launch()
+
+        let amountField = app.textFields["AmountTextField"]
+        XCTAssertTrue(amountField.exists)
+        
+        let saveButton = app.buttons["SaveButton"]
+        XCTAssertTrue(saveButton.exists)
+        XCTAssertFalse(saveButton.isEnabled)
+        
+        amountField.tap()
+        amountField.clearAndEnterText(text: "20.00")
+
+        XCTAssertTrue(saveButton.isEnabled)
+    }
+}
+
+extension XCUIElement {
+    func clearAndEnterText(text: String) {
+        guard let currentValue = self.value as? String else { return }
+        
+        self.tap()
+        
+        let deleteString = String(repeating: XCUIKeyboardKey.delete.rawValue, count: currentValue.count)
+        self.typeText(deleteString)
+        self.typeText(text)
+    }
 }

@@ -19,6 +19,10 @@ struct ReceiptTrackerApp: App {
                     .environment(\.managedObjectContext, context)
                     .installToast(position: .bottom)
                 }
+            } else if CommandLine.arguments.contains("-UITestDetailsScreen") {
+                DetailsScreenView(viewModel: MockDetailsScreenViewModel(), photoPath: Bundle.main.path(forResource: "testImage", ofType: "jpg"))
+                    .environment(\.managedObjectContext, context)
+                    .installToast(position: .bottom)
             } else { // non-testing start
                 CameraScreenView()
                     .environment(\.managedObjectContext, context)
