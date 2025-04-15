@@ -144,6 +144,7 @@ struct DetailsScreenView: View {
                     .padding()
                 }
             }
+            .accessibilityIdentifier("DetailsScreenView")
             
             // Fullscreen image overlay
             if isImageFullscreen {

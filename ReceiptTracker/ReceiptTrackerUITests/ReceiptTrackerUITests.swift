@@ -6,12 +6,14 @@ final class ReceiptTrackerUITests: XCTestCase {
         
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app.launchArguments = ["-UITest"]
     }
 
     override func tearDownWithError() throws { }
 
+    //MARK: - CameraScreenView
+    
     func testPermissionTextAppears() {
+        app.launchArguments = ["-UITestCameraScreen"]
         app.launch()
         
         let text = app.staticTexts["CameraScreenPermissionText"]
@@ -19,6 +21,7 @@ final class ReceiptTrackerUITests: XCTestCase {
     }
 
     func testSettingsButtonExists() {
+        app.launchArguments = ["-UITestCameraScreen"]
         app.launch()
         
         let button = app.buttons["CameraScreenSettingsButton"]
@@ -26,23 +29,69 @@ final class ReceiptTrackerUITests: XCTestCase {
     }
 
     func testCaptureButtonVisible() {
+        app.launchArguments = ["-UITestCameraScreen"]
         app.launchArguments.append("-CameraPermissionGranted")
         app.launch()
         
         let capture = app.buttons["CameraScreenCaptureButton"]
-        XCTAssertTrue(capture.waitForExistence(timeout: 5))
+        XCTAssertTrue(capture.waitForExistence(timeout: 2))
     }
 
-//    func testThumbnailNavigatesToGallery() {
-//        app.launchArguments.append("-CameraPermissionGranted")
+    func testThumbnailNavigatesToGallery() {
+        app.launchArguments = ["-UITestCameraScreen"]
+        app.launchArguments.append("-CameraPermissionGranted")
+        app.launch()
+        
+        let thumbnail = app.images["ThumbnailImage"]
+        XCTAssertTrue(thumbnail.waitForExistence(timeout: 2))
+        
+        thumbnail.tap()
+        
+        let gallery = app.scrollViews["GalleryScreenView"]
+        XCTAssertTrue(gallery.waitForExistence(timeout: 2))
+    }
+    
+    //MARK: - GalleryScreenViewModel
+    
+    func testGalleryHasThumbnails() {
+        app.launchArguments = ["-UITestGalleryScreen"]
+        app.launch()
+
+        let gallery = app.scrollViews["GalleryScreenView"]
+        XCTAssertTrue(gallery.waitForExistence(timeout: 2))
+
+        let thumbnail = app.images["ThumbnailImage"]
+        XCTAssertTrue(thumbnail.waitForExistence(timeout: 2))
+    }
+    
+    func testDeleteThumbnail() {
+        app.launchArguments = ["-UITestGalleryScreen"]
+        app.launch()
+        
+        let firstThumbnail = app.images["ThumbnailImage"].firstMatch
+        
+        XCTAssertTrue(firstThumbnail.exists)
+        
+        firstThumbnail.press(forDuration: 1.5)  // Press and hold to open context menu
+        let deleteButton = app.buttons["Delete"]
+        
+        XCTAssertTrue(deleteButton.waitForExistence(timeout: 3))
+        deleteButton.tap()
+        
+        XCTAssertFalse(firstThumbnail.exists)
+    }
+    //Needs DetailsScreenView testable to work
+//    func testThumbnailNavigatesToDetails() {
+//        app.launchArguments = ["-UITestGalleryScreen"]
 //        app.launch()
 //        
-//        let thumbnail = app.otherElements["ThumbnailImage"]
-//        XCTAssertTrue(thumbnail.waitForExistence(timeout: 5))
+//        let firstThumbnail = app.images["ThumbnailImage"].firstMatch
 //        
-//        thumbnail.tap()
+//        XCTAssertTrue(firstThumbnail.exists)
 //        
-//        let gallery = app.staticTexts["GalleryScreenView"]
-//        XCTAssertTrue(gallery.waitForExistence(timeout: 2))
+//        firstThumbnail.tap()
+//        
+//        let details = app.scrollViews["DetailsScreenView"]
+//        XCTAssertTrue(details.waitForExistence(timeout: 2))
 //    }
 }

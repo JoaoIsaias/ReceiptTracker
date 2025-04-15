@@ -33,5 +33,8 @@ struct ThumbnailImageView: View {
             }
             thumbnail = imageThumbnail
         }
+        .accessibilityIdentifier("ThumbnailImage")
+        .accessibilityLabel("ThumbnailImage")
+        .accessibilityAddTraits(.isImage)
     }
 }

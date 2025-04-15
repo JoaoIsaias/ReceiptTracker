@@ -6,7 +6,7 @@ struct GalleryScreenView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.presentToast) var presentToast
     
-    @StateObject private var viewModel = GalleryScreenViewModel()
+    @StateObject private var viewModel: GalleryScreenViewModel
     
     @State private var shouldNavigate = false
     @State private var selectedPhotoPath: String = ""
@@ -16,6 +16,10 @@ struct GalleryScreenView: View {
         GridItem(.flexible()),
         GridItem(.flexible())
     ]
+    
+    init(viewModel: GalleryScreenViewModel? = nil) {
+        _viewModel = StateObject(wrappedValue: viewModel ?? GalleryScreenViewModel())
+    }
     
     var body: some View {
         ScrollView {

@@ -9,10 +9,17 @@ struct ReceiptTrackerApp: App {
         WindowGroup {
             let context = PersistenceController.shared.container.viewContext
 
-            if CommandLine.arguments.contains("-UITest") {
+            if CommandLine.arguments.contains("-UITestCameraScreen") {
                 CameraScreenView(viewModel: MockCameraScreenViewModel())
                     .environment(\.managedObjectContext, context)
-            } else {
+                    .installToast(position: .bottom)
+            } else if CommandLine.arguments.contains("-UITestGalleryScreen") {
+                NavigationStack {
+                    GalleryScreenView(viewModel: MockGalleryScreenViewModel())
+                    .environment(\.managedObjectContext, context)
+                    .installToast(position: .bottom)
+                }
+            } else { // non-testing start
                 CameraScreenView()
                     .environment(\.managedObjectContext, context)
                     .installToast(position: .bottom)

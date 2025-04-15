@@ -10,15 +10,19 @@ class MockCameraScreenViewModel: CameraScreenViewModel {
         } else {
             self.isCameraPermissionGranted = false
         }
+        
+        if let testImagePath = Bundle.main.path(forResource: "testImage", ofType: "jpg") {
+            self.lastPhotoPath = testImagePath
+        }
     }
     
     override func stopCameraSession() { }
 
     override func capturePhoto() async -> String? {
-        return "/path/image123.jpg"
+        return Bundle.main.path(forResource: "testImage", ofType: "jpg")
     }
 
     override func fetchLatestPhotoPath(context: NSManagedObjectContext) async {
-        self.lastPhotoPath = "/path/image123.jpg"
+        self.lastPhotoPath = Bundle.main.path(forResource: "testImage", ofType: "jpg")
     }
 }
