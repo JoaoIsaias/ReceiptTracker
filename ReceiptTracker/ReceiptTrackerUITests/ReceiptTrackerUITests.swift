@@ -2,33 +2,47 @@ import XCTest
 
 final class ReceiptTrackerUITests: XCTestCase {
 
+    let app = XCUIApplication()
+        
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-
-        // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
-
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
+        app.launchArguments = ["-UITest"]
     }
 
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
+    override func tearDownWithError() throws { }
 
-    @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
-        let app = XCUIApplication()
+    func testPermissionTextAppears() {
         app.launch()
-
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        
+        let text = app.staticTexts["CameraScreenPermissionText"]
+        XCTAssertTrue(text.waitForExistence(timeout: 2))
     }
 
-    @MainActor
-    func testLaunchPerformance() throws {
-        // This measures how long it takes to launch your application.
-        measure(metrics: [XCTApplicationLaunchMetric()]) {
-            XCUIApplication().launch()
-        }
+    func testSettingsButtonExists() {
+        app.launch()
+        
+        let button = app.buttons["CameraScreenSettingsButton"]
+        XCTAssertTrue(button.waitForExistence(timeout: 2))
     }
+
+    func testCaptureButtonVisible() {
+        app.launchArguments.append("-CameraPermissionGranted")
+        app.launch()
+        
+        let capture = app.buttons["CameraScreenCaptureButton"]
+        XCTAssertTrue(capture.waitForExistence(timeout: 5))
+    }
+
+//    func testThumbnailNavigatesToGallery() {
+//        app.launchArguments.append("-CameraPermissionGranted")
+//        app.launch()
+//        
+//        let thumbnail = app.otherElements["ThumbnailImage"]
+//        XCTAssertTrue(thumbnail.waitForExistence(timeout: 5))
+//        
+//        thumbnail.tap()
+//        
+//        let gallery = app.staticTexts["GalleryScreenView"]
+//        XCTAssertTrue(gallery.waitForExistence(timeout: 2))
+//    }
 }

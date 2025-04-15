@@ -47,6 +47,7 @@ struct GalleryScreenView: View {
                 await viewModel.fetchAllPhotoPaths(context: viewContext)
             }
         }
+        .accessibilityIdentifier("GalleryScreenView")
     }
 }
 

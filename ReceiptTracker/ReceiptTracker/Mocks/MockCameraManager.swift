@@ -10,7 +10,7 @@ class MockCameraManager: CameraManagerProtocol {
 
     var permissionGranted: Bool = true
     var shouldThrowOnCapture: Bool = false
-    var mockCapturedPhotoPath: String? = "/mock/path/photo.jpg"
+    var mockCapturedPhotoPath: String? = "/path/image123.jpg"
 
     private(set) var didRequestPermission = false
     private(set) var didConfigureSession = false

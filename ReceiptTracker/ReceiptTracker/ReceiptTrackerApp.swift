@@ -7,9 +7,17 @@ struct ReceiptTrackerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
-                .installToast(position: .bottom)
+            let context = PersistenceController.shared.container.viewContext
+
+            if CommandLine.arguments.contains("-UITest") {
+                CameraScreenView(viewModel: MockCameraScreenViewModel())
+                    .environment(\.managedObjectContext, context)
+            } else {
+                CameraScreenView()
+                    .environment(\.managedObjectContext, context)
+                    .installToast(position: .bottom)
+            }
+                
         }
     }
 }

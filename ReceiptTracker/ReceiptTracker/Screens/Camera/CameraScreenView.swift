@@ -4,7 +4,7 @@ import CoreData
 struct CameraScreenView: View {
     @Environment(\.managedObjectContext) private var viewContext
     
-    @StateObject private var viewModel = CameraScreenViewModel()
+    @StateObject private var viewModel: CameraScreenViewModel
     
     @State private var capturedPhotoPath: String? = nil
     
@@ -12,6 +12,10 @@ struct CameraScreenView: View {
     @State private var shouldNavigateToGallery = false
     
     @State private var showPermissionAlert = false
+    
+    init(viewModel: CameraScreenViewModel? = nil) {
+        _viewModel = StateObject(wrappedValue: viewModel ?? CameraScreenViewModel())
+    }
     
     var body: some View {
         NavigationStack {
@@ -26,11 +30,13 @@ struct CameraScreenView: View {
                             Text("Camera permission is required.")
                                 .foregroundStyle(.white)
                                 .padding()
+                                .accessibilityIdentifier("CameraScreenPermissionText")
                             
                             Button("Go to Settings") {
                                 openSettings()
                             }
                             .padding()
+                            .accessibilityIdentifier("CameraScreenSettingsButton")
                         } else {
                             CameraPreview(isSessionRunning: $viewModel.isCameraSessionRunning, session: viewModel.getCameraSession())
                                 .frame(height: UIScreen.main.bounds.height*0.6)
@@ -59,6 +65,7 @@ struct CameraScreenView: View {
                                         }
                                     }
                                 }
+                                .accessibilityIdentifier("CameraScreenCaptureButton")
                             }
                             .padding()
                         }
